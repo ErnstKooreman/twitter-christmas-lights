@@ -4,6 +4,7 @@ Created on Sun Nov 21 21:00:02 2021
 
 @author: Ernst
 """
+import os
 import requests
 import json
 from threading import Timer
@@ -11,6 +12,13 @@ import RPi.GPIO as GPIO
 import time
 import logging
 
+
+# User configuration
+pinLights = 24
+LIGHTS_ON_TIME = 5  # Time that the lights turn on for each tweet in seconds.
+
+
+bearer_token = os.environ.get("TWITTER_BEARER_TOKEN")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
 
@@ -22,19 +30,16 @@ logging.basicConfig(level=logging.DEBUG,
 
 
 global ledDC, OnOff
-ledDC = 0
+ledDC = 0  # Initiate DutyCycle
 OnOff = 'Off'
-
-# Configure GPIO pins
-pinLeds = 24
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
 
 # Configure pins as output
-GPIO.setup(pinLeds, GPIO.OUT, initial=1)
-ledstrip = GPIO.PWM(pinLeds, 100)  # 100 Hz
-ledstrip.start(0)
+GPIO.setup(pinLights, GPIO.OUT, initial=1)
+lights = GPIO.PWM(pinLights, 100)  # 100 Hz
+lights.start(0)
 
 
 def LightsOn():
@@ -42,7 +47,7 @@ def LightsOn():
     OnOff = 'On'
     if ledDC < 100:
         for i in range(ledDC + 1, 101):
-            ledstrip.ChangeDutyCycle(i)
+            lights.ChangeDutyCycle(i)
             ledDC = i
             time.sleep(0.05)
 
@@ -52,12 +57,9 @@ def LightsOff():
     OnOff = 'Off'
     for i in range(ledDC, -1, -1):
         if OnOff == 'Off':
-            ledstrip.ChangeDutyCycle(i)
+            lights.ChangeDutyCycle(i)
             ledDC = i
             time.sleep(0.05)
-
-
-bearer_token = "AAAAAAAAAAAAAAAAAAAAAPoAWAEAAAAAIqEYGv80qMNnaOnfnNjog2N5gco%3DHV40eVUR1usB0CbbxqnrWzt9jOwREiM43bWstZIwYB2nCG71Qw"
 
 
 def bearer_oauth(r):
@@ -133,7 +135,7 @@ def get_stream():
             )
         )
     
-    t = Timer(1.0, LightsOff)
+    t = Timer(1.0, LightsOff)  # Initiate timer object
     for response_line in response.iter_lines():
             if response_line:
                 json_response = json.loads(response_line)
@@ -151,8 +153,8 @@ def get_stream():
                 
                 LightsOn()
                     
-                t.cancel()
-                t = Timer(5.0, LightsOff)
+                t.cancel()  # reset timer every time a tweet is found
+                t = Timer(LIGHTS_ON_TIME, LightsOff)
                 t.start()
 
 
@@ -164,17 +166,16 @@ def main():
             delete_all_rules()
              
             rules = [
-                 {"value": "(kerst OR kerstmis OR kerstfeest OR kerstvakantie) -is:retweet -is:reply -is:quote", "tag": "Kerst"},
-#                {"value": '(sinterklaas OR "sint nicolaas") -is:retweet -is:reply -is:quote', "tag": "Sinterklaas"},
-		 {"value": "(oud en nieuw) -is:retweet -is:reply -is:quote", "tag": "OenN"}
+                 {"value": "(christmas OR holidays) -is:retweet -is:reply -is:quote", "tag": "Christmas"},
                  ]
             set_rules(rules)
-            get_stream()
             status = True
 
         except:
             logging.info('Unable to reach rules, trying again in 10 sec')
             time.sleep(10)
+        
+        get_stream()
 
 
 if __name__ == '__main__':
@@ -182,5 +183,5 @@ if __name__ == '__main__':
         main()
         
     except KeyboardInterrupt:
-        ledstrip.stop()
+        lights.stop()
         GPIO.cleanup()
