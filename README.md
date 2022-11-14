@@ -43,5 +43,5 @@ journalctl -f -u clights.service
 or checking the `output.log` file in the `clights.py` folder.
 If everything looks fine, enable the service to tell systemd to start it automatically at boot:
 ```
-sudo systemctl enable startupbrowser.service
+sudo systemctl enable clights.service
 ```
