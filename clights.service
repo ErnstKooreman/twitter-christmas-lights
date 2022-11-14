@@ -1,0 +1,13 @@
+[Unit]
+Description=Start Clight python script
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/environment
+WorkingDirectory=/home/pi/Documents/Python/christmaslights
+ExecStart=/usr/bin/python3 /home/pi/Documents/Python/christmaslights/clights.py
+
+[Install]
+WantedBy=multi-user.target
