@@ -1,4 +1,4 @@
-# twitter_christmaslights
+# twitter-christmas-lights
 Connect christmas lights to Twitter. By using a (N-channel) MOSFET, the lights can fade in and out without making noise (as opposed to using a relay switch).
 
 *(disclaimer: I am not a professional electrician and have no background as such. This is just a hobby project, please be careful with electronics)*
